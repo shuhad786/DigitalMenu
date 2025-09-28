@@ -1,11 +1,17 @@
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
-/**
- * Metro configuration
- * https://reactnative.dev/docs/metro
- *
- * @type {import('@react-native/metro-config').MetroConfig}
- */
-const config = {};
+const customConfig = {
+  resolver: {
+    assetExts: ['ttf'], // we will merge this with default assetExts below
+  },
+};
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+module.exports = mergeConfig(
+  getDefaultConfig(__dirname),
+  {
+    resolver: {
+      assetExts: [...getDefaultConfig(__dirname).resolver.assetExts, 'ttf'],
+    },
+  }
+);
+
