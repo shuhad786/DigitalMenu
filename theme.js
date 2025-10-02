@@ -9,4 +9,7 @@ export const theme = {
     footerText: '#ffffff',
     bodyText: '#000000',
   },
+  foodItem: {
+    backgroundColor: '#c2c2c2ff', // light grey for food items
+  }
 };

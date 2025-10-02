@@ -4,6 +4,18 @@
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+
+        <!-- Apply custom spinner style globally -->
+        <item name="android:spinnerStyle">@style/MySpinnerStyle</item>
+    </style>
+
+    <!-- Custom style for Spinner (Picker) -->
+    <style name="MySpinnerStyle" parent="Widget.AppCompat.Spinner">
+        <item name="android:textColor">#aa1818</item> <!-- Text color -->
+        <item name="android:textSize">10sp</item>     <!-- Text size -->
+        <item name="android:paddingTop">5dp</item>    <!-- Padding top -->
+        <item name="android:paddingBottom">5dp</item> <!-- Padding bottom -->
+        <item name="android:background">@drawable/spinner_background</item> <!-- Optional custom background -->
     </style>
 
 </resources>
