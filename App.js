@@ -711,12 +711,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
 
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-
   mealName: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -822,7 +816,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
   },
   input: {
     borderWidth: 1,
