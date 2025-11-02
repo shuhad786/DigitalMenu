@@ -48,13 +48,27 @@ const Layout = () => {
   // Meal data states for Menu and Gourmet Meals
   const [menuMeals, setMenuMeals] = useState([]);
   const [gourmetMeals, setGourmetMeals] = useState([]);
+  const [courseFilter, setCourseFilter] = useState('All');
 
   // Form state inside modal
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formImageUri, setFormImageUri] = useState(null);
   const [editingMealId, setEditingMealId] = useState(null); // null means adding new meal
+  const [formCourse, setFormCourse] = useState('Starter');
   
+  // Favorite meals toggle
+  const toggleFavorite = (menuName, mealId) => {
+  if (menuName === 'Menu') {
+    setMenuMeals(prev =>
+      prev.map(m => m.id === mealId ? { ...m, favorite: !m.favorite } : m)
+    );
+  } else if (menuName === 'Gourmet Meals') {
+    setGourmetMeals(prev =>
+      prev.map(m => m.id === mealId ? { ...m, favorite: !m.favorite } : m)
+    );
+  }
+};
 
   const toggleMenu = () => {
     if (menuVisible) {
@@ -85,11 +99,13 @@ const Layout = () => {
       setFormName(meal.name);
       setFormDescription(meal.description);
       setFormImageUri(meal.image);
+      setFormCourse(meal.course || 'Starter');
       setEditingMealId(meal.id);
     } else {
       setFormName('');
       setFormDescription('');
       setFormImageUri(null);
+      setFormCourse('Starter');
       setEditingMealId(null);
     }
     setModalVisible(true);
@@ -98,11 +114,16 @@ const Layout = () => {
   // Save meal data to the correct menu list
   const saveMeal = () => {
     const mealData = {
-      id: editingMealId || Date.now(),
-      name: formName,
-      description: formDescription,
-      image: formImageUri,
-    };
+    id: editingMealId || Date.now(),
+    name: formName,
+    description: formDescription,
+    image: formImageUri,
+    course: formCourse,
+    favorite: editingMealId ? (editingMenu === 'Menu' 
+      ? menuMeals.find(m => m.id === editingMealId)?.favorite || false
+      : gourmetMeals.find(m => m.id === editingMealId)?.favorite || false) 
+      : false,
+  };
 
     if (editingMenu === 'Menu') {
       if (editingMealId) {
@@ -163,7 +184,22 @@ const Layout = () => {
         <View style={{ flex: 1, marginLeft: 10 }}>
           <Text style={styles.mealName}>{meal.name}</Text>
           <Text style={styles.mealDescription}>{meal.description}</Text>
+          <Text style={{ fontStyle: 'italic', color: '#888', fontSize: 14 }}>
+            {meal.course}
+          </Text>
         </View>
+
+        {/* Star icon for favorite toggle */}
+        <TouchableOpacity
+          onPress={() => toggleFavorite(menuName, meal.id)}
+          style={styles.favoriteIcon}
+        >
+          <Feather
+            name={meal.favorite ? 'star' : 'star'}
+            size={24}
+            color={meal.favorite ? '#FFD700' : '#888'}
+          />
+        </TouchableOpacity>
       </TouchableOpacity>
     ));
   };
@@ -182,13 +218,35 @@ const Layout = () => {
             </Text>
           </View>
         );
-      case 'Menu':
+      case 'Menu': {
+         const filteredMenuMeals = courseFilter === 'All' 
+          ? menuMeals 
+          : menuMeals.filter(meal => meal.course === courseFilter);
         return (
           <View style={styles.pageContainer}>
             <Text style={styles.pageTitle}>Menu</Text>
-            {renderMealsList(menuMeals, 'Menu')}
+            <View style={styles.filterContainer}>
+              <Text style={styles.filterLabel}>Filter by Course:</Text>
+              <Picker
+                selectedValue={courseFilter}
+                onValueChange={(value) => setCourseFilter(value)}
+                style={styles.picker}
+              >
+                <Picker.Item label="All" value="All" />
+                <Picker.Item label="Starter" value="Starter" />
+                <Picker.Item label="Main" value="Main" />
+                <Picker.Item label="Dessert" value="Dessert" />
+                <Picker.Item label="Side" value="Side" />
+                <Picker.Item label="Drink" value="Drink" />
+              </Picker>
+            </View>
+            <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>
+              Total Meals: {menuMeals.length}
+            </Text>
+            {renderMealsList(filteredMenuMeals, 'Menu')}
           </View>
         );
+      }
       case 'Bookings': {
         const confirmBooking = () => {
           if (!name || !surname || !contactNumber || !time) {
@@ -400,13 +458,35 @@ const Layout = () => {
           </ScrollView>
         );
       }
-      case 'Gourmet Meals':
+      case 'Gourmet Meals': {
+        const filteredMenuMeals = courseFilter === 'All' 
+          ? menuMeals 
+          : menuMeals.filter(meal => meal.course === courseFilter);
         return (
           <View style={styles.pageContainer}>
             <Text style={styles.pageTitle}>Gourmet Meals</Text>
-            {renderMealsList(gourmetMeals, 'Gourmet Meals')}
+            <View style={styles.filterContainer}>
+              <Text style={styles.filterLabel}>Filter by Course:</Text>
+              <Picker
+                selectedValue={courseFilter}
+                onValueChange={(value) => setCourseFilter(value)}
+                style={styles.picker}
+              >
+                <Picker.Item label="All" value="All" />
+                <Picker.Item label="Starter" value="Starter" />
+                <Picker.Item label="Main" value="Main" />
+                <Picker.Item label="Dessert" value="Dessert" />
+                <Picker.Item label="Side" value="Side" />
+                <Picker.Item label="Drink" value="Drink" />
+              </Picker>
+            </View>
+            <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>
+              Total Meals: {gourmetMeals.length}
+            </Text>
+            {renderMealsList(filteredMenuMeals, 'Gourmet Meals')}
           </View>
         );
+      }
       case 'About':
         return (
           <View style={styles.aboutContainer}>
@@ -599,6 +679,22 @@ const Layout = () => {
                 placeholder="Enter meal description"
               />
 
+              <Text style={styles.inputLabel}>Course Type</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={formCourse}
+                    onValueChange={setFormCourse}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Starter" value="Starter" />
+                    <Picker.Item label="Main" value="Main" />
+                    <Picker.Item label="Dessert" value="Dessert" />
+                    <Picker.Item label="Side" value="Side" />
+                    <Picker.Item label="Drink" value="Drink" />
+                  </Picker>
+                </View>
+
+
               {/* Image picker */}
               <Text style={styles.inputLabel}>Image</Text>
               <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
@@ -771,6 +867,14 @@ const styles = StyleSheet.create({
     height: 80,
     width: '100%',
     color: '#000000ff',          
+  },
+
+  counterText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+    alignSelf: 'center',
   },
 
   timePickerButton: {
