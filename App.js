@@ -219,19 +219,23 @@ const Layout = () => {
           </View>
         );
       case 'Menu': {
-         const filteredMenuMeals = courseFilter === 'All' 
-          ? menuMeals 
-          : menuMeals.filter(meal => meal.course === courseFilter);
+        const filteredMenuMeals = courseFilter === 'All'
+          ? menuMeals
+          : menuMeals.filter(meal => 
+              meal.course?.toLowerCase() === courseFilter.toLowerCase());
+
         return (
           <View style={styles.pageContainer}>
             <Text style={styles.pageTitle}>Menu</Text>
+
             <View style={styles.filterContainer}>
               <Text style={styles.filterLabel}>Filter by Course:</Text>
-              <Picker
-                selectedValue={courseFilter}
-                onValueChange={(value) => setCourseFilter(value)}
-                style={styles.picker}
-              >
+               <Picker
+                  selectedValue={courseFilter}
+                  onValueChange={setCourseFilter}
+                  mode="dropdown"
+                  style={{ flex: 1 }}
+                >
                 <Picker.Item label="All" value="All" />
                 <Picker.Item label="Starter" value="Starter" />
                 <Picker.Item label="Main" value="Main" />
@@ -240,13 +244,16 @@ const Layout = () => {
                 <Picker.Item label="Drink" value="Drink" />
               </Picker>
             </View>
+
             <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>
-              Total Meals: {menuMeals.length}
+              Total Meals: {filteredMenuMeals.length}
             </Text>
+
             {renderMealsList(filteredMenuMeals, 'Menu')}
           </View>
         );
       }
+
       case 'Bookings': {
         const confirmBooking = () => {
           if (!name || !surname || !contactNumber || !time) {
@@ -459,18 +466,23 @@ const Layout = () => {
         );
       }
       case 'Gourmet Meals': {
-        const filteredMenuMeals = courseFilter === 'All' 
-          ? menuMeals 
-          : menuMeals.filter(meal => meal.course === courseFilter);
+        const filteredGourmetMeals = courseFilter === 'All'
+          ? gourmetMeals
+          : gourmetMeals.filter(meal =>
+              meal.course?.toLowerCase() === courseFilter.toLowerCase()
+            );
+
         return (
           <View style={styles.pageContainer}>
             <Text style={styles.pageTitle}>Gourmet Meals</Text>
+
             <View style={styles.filterContainer}>
               <Text style={styles.filterLabel}>Filter by Course:</Text>
               <Picker
                 selectedValue={courseFilter}
                 onValueChange={(value) => setCourseFilter(value)}
-                style={styles.picker}
+                mode="dropdown"
+                style={{ flex: 1 }}
               >
                 <Picker.Item label="All" value="All" />
                 <Picker.Item label="Starter" value="Starter" />
@@ -480,10 +492,12 @@ const Layout = () => {
                 <Picker.Item label="Drink" value="Drink" />
               </Picker>
             </View>
+
             <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>
-              Total Meals: {gourmetMeals.length}
+              Total Meals: {filteredGourmetMeals.length}
             </Text>
-            {renderMealsList(filteredMenuMeals, 'Gourmet Meals')}
+
+            {renderMealsList(filteredGourmetMeals, 'Gourmet Meals')}
           </View>
         );
       }
@@ -1039,6 +1053,10 @@ const styles = StyleSheet.create({
   menuItemsContainer: {
     marginTop: 40,
     alignItems: 'center',
+  },
+  filterContainer: {
+    height: 50, 
+    width: '100%'
   },
   menuItem: {
     paddingVertical: 15,
