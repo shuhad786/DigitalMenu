@@ -1,20 +1,9 @@
 import React, { useState, useRef } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  Animated,
-  Dimensions,
-  TouchableWithoutFeedback,
-  Modal,
-  TextInput,
-  ScrollView,
-  Alert,
+  View, Text, TouchableOpacity, Image, StyleSheet, Animated, Dimensions,
+  TouchableWithoutFeedback, Modal, TextInput, ScrollView, Alert
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -23,53 +12,56 @@ import { theme } from './theme';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const Layout = () => {
-  const [menuVisible, setMenuVisible] = useState(false);
+  // Navigation and menu
+   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedPage, setSelectedPage] = useState('Home');
   const slideAnim = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
 
-  // Booking form state hooks
-  const [name, setName] = useState('');
-  const [surname, setSurname] = useState('');
-  const [contactNumber, setContactNumber] = useState('');
-  const [time, setTime] = useState('');
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [people, setPeople] = useState('1');
-
-  // Delivery form state hook
-  const [showTimePicker2, setShowTimePicker2] = useState(false);
-  const [address, setAddress] = useState('');
-
-  // Modal state
-  const [modalVisible, setModalVisible] = useState(false);
-
-  // Which menu are we editing? 'Menu' or 'Gourmet Meals'
-  const [editingMenu, setEditingMenu] = useState('Menu');
-
-  // Meal data states for Menu and Gourmet Meals
-  const [menuMeals, setMenuMeals] = useState([]);
-  const [gourmetMeals, setGourmetMeals] = useState([]);
+  // Menu state
+  const [menuMeals, setMenuMeals] = useState([]); // main meals array
+  const [gourmetMeals, setGourmetMeals] = useState([]); // gourmet meals array
   const [courseFilter, setCourseFilter] = useState('All');
 
-  // Form state inside modal
+  // Chef Modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingMenu, setEditingMenu] = useState('Menu');
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formImageUri, setFormImageUri] = useState(null);
-  const [editingMealId, setEditingMealId] = useState(null); // null means adding new meal
+  const [editingMealId, setEditingMealId] = useState(null);
   const [formCourse, setFormCourse] = useState('Starter');
-  
-  // Favorite meals toggle
-  const toggleFavorite = (menuName, mealId) => {
-  if (menuName === 'Menu') {
-    setMenuMeals(prev =>
-      prev.map(m => m.id === mealId ? { ...m, favorite: !m.favorite } : m)
-    );
-  } else if (menuName === 'Gourmet Meals') {
-    setGourmetMeals(prev =>
-      prev.map(m => m.id === mealId ? { ...m, favorite: !m.favorite } : m)
-    );
-  }
-};
+  const [formPrice, setFormPrice] = useState('');
 
+  // Booking state
+  const [bookingName, setBookingName] = useState('');
+  const [bookingSurname, setBookingSurname] = useState('');
+  const [bookingContactNumber, setBookingContactNumber] = useState('');
+  const [bookingTime, setBookingTime] = useState(new Date());
+  const [showBookingTimePicker, setShowBookingTimePicker] = useState(false);
+  const [bookingPeople, setBookingPeople] = useState('1');
+
+  // Delivery state
+  const [deliveryName, setDeliveryName] = useState('');
+  const [deliverySurname, setDeliverySurname] = useState('');
+  const [deliveryContactNumber, setDeliveryContactNumber] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState(new Date());
+  const [showDeliveryTimePicker, setShowDeliveryTimePicker] = useState(false);
+
+  // Favorite toggle
+  const toggleFavorite = (menuName, mealId) => {
+    if (menuName === 'Menu') {
+      setMenuMeals(prev =>
+        prev.map(m => m.id === mealId ? { ...m, favorite: !m.favorite } : m)
+      );
+    } else if (menuName === 'Gourmet Meals') {
+      setGourmetMeals(prev =>
+        prev.map(m => m.id === mealId ? { ...m, favorite: !m.favorite } : m)
+      );
+    }
+  };
+
+  // Navigation
   const toggleMenu = () => {
     if (menuVisible) {
       Animated.timing(slideAnim, {
@@ -86,13 +78,12 @@ const Layout = () => {
       }).start();
     }
   };
-
   const navigateTo = (page) => {
     setSelectedPage(page);
     toggleMenu();
   };
 
-  // Open modal for adding new meal or editing existing meal
+  // Modal for Chef Menu
   const openEditModal = (menu = 'Menu', meal = null) => {
     setEditingMenu(menu);
     if (meal) {
@@ -100,30 +91,38 @@ const Layout = () => {
       setFormDescription(meal.description);
       setFormImageUri(meal.image);
       setFormCourse(meal.course || 'Starter');
+      setFormPrice(meal.price ? meal.price.toString() : '');
       setEditingMealId(meal.id);
     } else {
       setFormName('');
       setFormDescription('');
       setFormImageUri(null);
       setFormCourse('Starter');
+      setFormPrice('');
       setEditingMealId(null);
     }
     setModalVisible(true);
   };
 
-  // Save meal data to the correct menu list
+  // Save meal (add or edit)
   const saveMeal = () => {
+    if (!formName || !formDescription || !formCourse || !formPrice) {
+      Alert.alert('Please fill in all fields');
+      return;
+    }
     const mealData = {
-    id: editingMealId || Date.now(),
-    name: formName,
-    description: formDescription,
-    image: formImageUri,
-    course: formCourse,
-    favorite: editingMealId ? (editingMenu === 'Menu' 
-      ? menuMeals.find(m => m.id === editingMealId)?.favorite || false
-      : gourmetMeals.find(m => m.id === editingMealId)?.favorite || false) 
-      : false,
-  };
+      id: editingMealId || Date.now(),
+      name: formName,
+      description: formDescription,
+      image: formImageUri,
+      course: formCourse,
+      price: parseFloat(formPrice),
+      favorite: editingMealId ? (
+        editingMenu === 'Menu'
+          ? menuMeals.find(m => m.id === editingMealId)?.favorite || false
+          : gourmetMeals.find(m => m.id === editingMealId)?.favorite || false
+      ) : false,
+    };
 
     if (editingMenu === 'Menu') {
       if (editingMealId) {
@@ -142,8 +141,29 @@ const Layout = () => {
         setGourmetMeals((prev) => [...prev, mealData]);
       }
     }
-
     setModalVisible(false);
+  };
+
+  // Remove meal
+  const removeMeal = (menuName, mealId) => {
+    Alert.alert(
+      'Remove Meal',
+      'Are you sure you want to remove this meal?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            if (menuName === 'Menu') {
+              setMenuMeals(prev => prev.filter(m => m.id !== mealId));
+            } else if (menuName === 'Gourmet Meals') {
+              setGourmetMeals(prev => prev.filter(m => m.id !== mealId));
+            }
+          }
+        }
+      ]
+    );
   };
 
   // Image picker handlers
@@ -154,7 +174,6 @@ const Layout = () => {
       }
     });
   };
-
   const takePhoto = () => {
     launchCamera({ mediaType: 'photo' }, (response) => {
       if (!response.didCancel && !response.errorCode && response.assets?.length) {
@@ -163,17 +182,18 @@ const Layout = () => {
     });
   };
 
-  // Render meals list for Menu or Gourmet Meals page
-  const renderMealsList = (meals, menuName) => {
+  // Render meals list (for Home, Menu, Gourmet Meals, Guest Filter)
+  const renderMealsList = (meals, menuName, showRemove = false) => {
     if (meals.length === 0) {
-      return <Text style={{ marginTop: 20, color: '#555' }}>No meals added yet.</Text>;
+      return (
+        <>
+          <Text style={{ marginTop: 20, color: '#555' }}>No meals added yet.</Text>
+          <View style={{ height: 50 }} />
+        </>
+      );
     }
     return meals.map((meal) => (
-      <TouchableOpacity
-        key={meal.id}
-        style={styles.mealItem}
-        onPress={() => openEditModal(menuName, meal)}
-      >
+      <View key={meal.id} style={styles.mealItem}>
         {meal.image ? (
           <Image source={{ uri: meal.image }} style={styles.mealImage} />
         ) : (
@@ -181,15 +201,18 @@ const Layout = () => {
             <Text style={{ color: '#999' }}>No Image</Text>
           </View>
         )}
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={styles.mealName}>{meal.name}</Text>
+        <View style={styles.mealTextContainer}>
+          <Text style={styles.mealName} numberOfLines={1} ellipsizeMode="tail">
+            {meal.name}
+          </Text>
           <Text style={styles.mealDescription}>{meal.description}</Text>
           <Text style={{ fontStyle: 'italic', color: '#888', fontSize: 14 }}>
             {meal.course}
           </Text>
+          <Text style={{ color: '#333', fontWeight: 'bold' }}>
+            R{meal.price ? meal.price.toFixed(2) : 'N/A'}
+          </Text>
         </View>
-
-        {/* Star icon for favorite toggle */}
         <TouchableOpacity
           onPress={() => toggleFavorite(menuName, meal.id)}
           style={styles.favoriteIcon}
@@ -200,339 +223,337 @@ const Layout = () => {
             color={meal.favorite ? '#FFD700' : '#888'}
           />
         </TouchableOpacity>
-      </TouchableOpacity>
+        {showRemove && (
+          <>
+            <TouchableOpacity
+              onPress={() => removeMeal(menuName, meal.id)}
+              style={{ marginLeft: 10 }}
+            >
+              <Feather name="trash-2" size={22} color="#d00" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => openEditModal(menuName, meal)}
+              style={{ marginLeft: 10 }}
+            >
+              <Feather name="edit" size={22} color="#007bff" />
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
     ));
   };
 
+  // Calculate average price per course
+  const getAveragePrices = (meals) => {
+    const courses = ['Starter', 'Main', 'Dessert', 'Side', 'Drink'];
+    const result = {};
+    courses.forEach(course => {
+      const filtered = meals.filter(m => m.course === course && m.price);
+      if (filtered.length) {
+        const avg = filtered.reduce((sum, m) => sum + m.price, 0) / filtered.length;
+        result[course] = avg;
+      }
+    });
+    return result;
+  };
+
+  // Home page: show all menu items and average price per course
+  const renderHomePage = () => {
+    const allMeals = [...menuMeals, ...gourmetMeals];
+    const avgPrices = getAveragePrices(allMeals);
+    return (
+      <ScrollView
+        style={{ flex: 1 }}  
+        contentContainerStyle={{
+          paddingHorizontal: 10,
+          paddingVertical: 30,
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+        }}
+      >
+        <Text style={styles.welcomeTitle}>Welcome to Christoffel’s Culinary Experience!</Text>
+        <Text style={styles.introText}>
+          Discover a personalized digital menu that changes nightly, crafted to delight your unique tastes.
+        </Text>
+        <Text style={styles.briefText}>
+          Stay effortlessly connected to Christoffel’s evolving menu, featuring fresh, seasonal dishes crafted daily. This app ensures you always have instant access to the latest culinary creations, allowing you to explore unique flavors and tailored dining experiences designed to delight your palate every time you dine.
+        </Text>
+        <Text style={{ fontWeight: 'bold', marginTop: 20, fontSize: 18 }}>Average Price by Course:</Text>
+        <View style={{height: 30}}></View>
+        {Object.keys(avgPrices).length === 0 && (
+          
+          <Text style={{ color: '#555', marginBottom: 10 }}>No menu items yet.</Text>
+        )}
+        {Object.entries(avgPrices).map(([course, avg]) => (
+          <Text key={course} style={{ fontSize: 16 }}>
+            {course}: R{avg.toFixed(2)}
+          </Text>
+        ))}
+        <Text style={{ fontWeight: 'bold', marginTop: 20, fontSize: 18 }}>Complete Menu:</Text>
+        {renderMealsList(allMeals, 'Menu')}
+      </ScrollView>
+    );
+  };
+
+  // Chef Menu Management Page
+  const renderChefMenuPage = () => (
+    <ScrollView contentContainerStyle={styles.pageContainer}>
+      <Text style={styles.pageTitle}>Chef Menu Management</Text>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => openEditModal('Menu', null)}
+      >
+        <Text style={styles.addButtonText}>Add New Menu Meal</Text>
+      </TouchableOpacity>
+      {renderMealsList(menuMeals, 'Menu', true)}
+
+      <View style={{ height: 20 }} />
+
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => openEditModal('Gourmet Meals', null)}
+      >
+        <Text style={styles.addButtonText}>Add New Gourmet Meal</Text>
+      </TouchableOpacity>
+      {renderMealsList(gourmetMeals, 'Gourmet Meals', true)}
+    </ScrollView>
+  );
+
+  // Guest Filter Page
+  const renderGuestFilterPage = () => {
+    const allMeals = [...menuMeals, ...gourmetMeals];
+    const filtered = courseFilter === 'All'
+      ? allMeals
+      : allMeals.filter(meal => meal.course === courseFilter);
+    return (
+      <ScrollView contentContainerStyle={styles.pageContainer}>
+        <Text style={styles.pageTitle}>Filter Menu by Course</Text>
+
+        <View style={{ height: 15 }} />
+
+        <View style={styles.filterContainer}>
+          <Text style={styles.filterLabel}>Select Course:</Text>
+          <Picker
+            selectedValue={courseFilter}
+            onValueChange={setCourseFilter}
+            mode="dropdown"
+            style={{ flex: 1 }}
+          >
+            <Picker.Item label="All" value="All" />
+            <Picker.Item label="Starter" value="Starter" />
+            <Picker.Item label="Main" value="Main" />
+            <Picker.Item label="Dessert" value="Dessert" />
+            <Picker.Item label="Side" value="Side" />
+            <Picker.Item label="Drink" value="Drink" />
+          </Picker>
+        </View>
+        {renderMealsList(filtered, 'Menu')}
+      </ScrollView>
+    );
+  };
+
+  // Bookings Page
+  const renderBookingsPage = () => {
+    const onChangeTime = (event, selectedDate) => {
+      setShowBookingTimePicker(false);
+      if (selectedDate) setBookingTime(selectedDate);
+    };
+
+    const submitBooking = () => {
+      if (!bookingName || !bookingSurname || !bookingContactNumber) {
+        Alert.alert('Please fill in all required fields');
+        return;
+      }
+      Alert.alert('Booking submitted', `Thank you, ${bookingName}!`);
+      // Reset form
+      setBookingName('');
+      setBookingSurname('');
+      setBookingContactNumber('');
+      setBookingPeople('1');
+      setBookingTime(new Date());
+    };
+
+    return (
+      <ScrollView contentContainerStyle={styles.pageContainer}>
+        <Text style={styles.pageTitle}>Make a Booking</Text>
+
+        <Text style={styles.inputLabel}>Name</Text>
+        <TextInput
+          style={styles.input}
+          value={bookingName}
+          onChangeText={setBookingName}
+          placeholder="Enter your name"
+        />
+
+        <Text style={styles.inputLabel}>Surname</Text>
+        <TextInput
+          style={styles.input}
+          value={bookingSurname}
+          onChangeText={setBookingSurname}
+          placeholder="Enter your surname"
+        />
+
+        <Text style={styles.inputLabel}>Contact Number</Text>
+        <TextInput
+          style={styles.input}
+          value={bookingContactNumber}
+          onChangeText={setBookingContactNumber}
+          placeholder="Enter your contact number"
+          keyboardType="phone-pad"
+        />
+
+        <Text style={styles.inputLabel}>Number of People</Text>
+        <Picker
+          selectedValue={bookingPeople}
+          onValueChange={setBookingPeople}
+          style={styles.picker}
+        >
+          {[...Array(20).keys()].map(i => (
+            <Picker.Item key={i + 1} label={`${i + 1}`} value={`${i + 1}`} />
+          ))}
+        </Picker>
+
+        <Text style={styles.inputLabel}>Booking Time</Text>
+        <TouchableOpacity
+          onPress={() => setShowBookingTimePicker(true)}
+          style={styles.timePickerButton}
+        >
+          <Text>{bookingTime.toLocaleString()}</Text>
+        </TouchableOpacity>
+        {showBookingTimePicker && (
+          <DateTimePicker
+            value={bookingTime}
+            mode="datetime"
+            display="default"
+            onChange={onChangeTime}
+          />
+        )}
+
+        <TouchableOpacity onPress={submitBooking} style={styles.submitButton}>
+          <Text style={styles.submitButtonText}>Submit Booking</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+  };
+
+  // Deliveries Page
+  const renderDeliveriesPage = () => {
+    const onChangeDeliveryTime = (event, selectedDate) => {
+      setShowDeliveryTimePicker(false);
+      if (selectedDate) setDeliveryTime(selectedDate);
+    };
+
+    const submitDelivery = () => {
+      if (!deliveryName || !deliverySurname || !deliveryContactNumber || !deliveryAddress) {
+        Alert.alert('Please fill in all required fields');
+        return;
+      }
+      Alert.alert('Delivery order submitted', `Thank you, ${deliveryName}!`);
+      // Reset form
+      setDeliveryName('');
+      setDeliverySurname('');
+      setDeliveryContactNumber('');
+      setDeliveryAddress('');
+      setDeliveryTime(new Date());
+    };
+
+    return (
+      <ScrollView contentContainerStyle={styles.pageContainer}>
+        <Text style={styles.pageTitle}>Place a Delivery Order</Text>
+
+        <Text style={styles.inputLabel}>Name</Text>
+        <TextInput
+          style={styles.input}
+          value={deliveryName}
+          onChangeText={setDeliveryName}
+          placeholder="Enter your name"
+        />
+
+        <Text style={styles.inputLabel}>Surname</Text>
+        <TextInput
+          style={styles.input}
+          value={deliverySurname}
+          onChangeText={setDeliverySurname}
+          placeholder="Enter your surname"
+        />
+
+        <Text style={styles.inputLabel}>Contact Number</Text>
+        <TextInput
+          style={styles.input}
+          value={deliveryContactNumber}
+          onChangeText={setDeliveryContactNumber}
+          placeholder="Enter your contact number"
+          keyboardType="phone-pad"
+        />
+
+        <Text style={styles.inputLabel}>Delivery Address</Text>
+        <TextInput
+          style={[styles.input, { height: 80 }]}
+          multiline
+          value={deliveryAddress}
+          onChangeText={setDeliveryAddress}
+          placeholder="Enter your delivery address"
+        />
+
+        <Text style={styles.inputLabel}>Delivery Time</Text>
+        <TouchableOpacity
+          onPress={() => setShowDeliveryTimePicker(true)}
+          style={styles.timePickerButton}
+        >
+          <Text>{deliveryTime.toLocaleString()}</Text>
+        </TouchableOpacity>
+        {showDeliveryTimePicker && (
+          <DateTimePicker
+            value={deliveryTime}
+            mode="datetime"
+            display="default"
+            onChange={onChangeDeliveryTime}
+          />
+        )}
+
+        <TouchableOpacity onPress={submitDelivery} style={styles.submitButton}>
+          <Text style={styles.submitButtonText}>Submit Delivery Order</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+  };
+
+  // About Page
+  const renderAboutPage = () => (
+    <ScrollView contentContainerStyle={styles.pageContainer}>
+      <Text style={styles.pageTitle}>About Christoffel's Culinary Experience</Text>
+      <Text style={styles.aboutText}>
+        Welcome to Christoffel’s Culinary Experience, where passion meets flavor. Our mission is to provide a personalized and evolving menu that delights your palate with fresh, seasonal dishes crafted daily by our expert chefs.
+      </Text>
+      <Text style={styles.aboutText}>
+        This app allows you to explore our menu, make bookings, place delivery orders, and stay connected with our latest culinary creations.
+      </Text>
+      <Text style={styles.aboutText}>
+        Thank you for choosing Christoffel’s. We look forward to serving you!
+      </Text>
+    </ScrollView>
+  );
+
+  // Page router
   const renderPageContent = () => {
     switch (selectedPage) {
-      case 'Home':
-        return (
-          <View style={styles.pageContainer}>
-            <Text style={styles.welcomeTitle}>Welcome to Christoffel’s Culinary Experience!</Text>
-            <Text style={styles.introText}>
-              Discover a personalized digital menu that changes nightly, crafted to delight your unique tastes.
-            </Text>
-            <Text style={styles.briefText}>
-              Stay effortlessly connected to Christoffel’s evolving menu, featuring fresh, seasonal dishes crafted daily. This app ensures you always have instant access to the latest culinary creations, allowing you to explore unique flavors and tailored dining experiences designed to delight your palate every time you dine.
-            </Text>
-          </View>
-        );
-      case 'Menu': {
-        const filteredMenuMeals = courseFilter === 'All'
-          ? menuMeals
-          : menuMeals.filter(meal => 
-              meal.course?.toLowerCase() === courseFilter.toLowerCase());
-
-        return (
-          <View style={styles.pageContainer}>
-            <Text style={styles.pageTitle}>Menu</Text>
-
-            <View style={styles.filterContainer}>
-              <Text style={styles.filterLabel}>Filter by Course:</Text>
-               <Picker
-                  selectedValue={courseFilter}
-                  onValueChange={setCourseFilter}
-                  mode="dropdown"
-                  style={{ flex: 1 }}
-                >
-                <Picker.Item label="All" value="All" />
-                <Picker.Item label="Starter" value="Starter" />
-                <Picker.Item label="Main" value="Main" />
-                <Picker.Item label="Dessert" value="Dessert" />
-                <Picker.Item label="Side" value="Side" />
-                <Picker.Item label="Drink" value="Drink" />
-              </Picker>
-            </View>
-
-            <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>
-              Total Meals: {filteredMenuMeals.length}
-            </Text>
-
-            {renderMealsList(filteredMenuMeals, 'Menu')}
-          </View>
-        );
-      }
-
-      case 'Bookings': {
-        const confirmBooking = () => {
-          if (!name || !surname || !contactNumber || !time) {
-            Alert.alert('Please fill in all fields');
-            return;
-          }
-          Alert.alert(
-            'Booking Confirmed',
-            `Thank you, ${name}!\nYour booking for ${people} people at ${time} is confirmed.`
-          );
-        };
-
-        // Helper to convert time string (e.g., "7:30 PM") to Date object
-        const getTimeDate = () => {
-          if (!time) return new Date();
-          const [hourMin, meridian] = time.split(' ');
-          let [hours, minutes] = hourMin.split(':').map(Number);
-          if (meridian === 'PM' && hours < 12) hours += 12;
-          if (meridian === 'AM' && hours === 12) hours = 0;
-          const date = new Date();
-          date.setHours(hours);
-          date.setMinutes(minutes);
-          return date;
-        };
-
-        const onTimeChange = (event, selectedDate) => {
-          setShowTimePicker(false); // Always close picker after selection on Android
-          if (selectedDate) {
-            let hours = selectedDate.getHours();
-            const minutes = selectedDate.getMinutes();
-            const meridian = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12 || 12;
-            const formattedTime = `${hours}:${minutes < 10 ? '0' : ''}${minutes} ${meridian}`;
-            setTime(formattedTime);
-          }
-        };
-
-        return (
-          <ScrollView contentContainerStyle={styles.pageContainer}>
-            <Text style={styles.pageTitle}>Bookings</Text>
-
-            {/* Stacked inputs aligned left */}
-            <TextInput
-              style={[styles.input, styles.leftAlignedInput]}
-              placeholder="Name"
-              value={name}
-              onChangeText={setName}
-            />
-
-            <TextInput
-              style={[styles.input, styles.leftAlignedInput]}
-              placeholder="Surname"
-              value={surname}
-              onChangeText={setSurname}
-            />
-
-            <TextInput
-              style={[styles.input, styles.leftAlignedInput]}
-              placeholder="Contact Number"
-              keyboardType="phone-pad"
-              value={contactNumber}
-              onChangeText={setContactNumber}
-            />
-
-            {/* Row container for Time and Number of People */}
-            <View style={styles.rowContainer}>
-              <View style={styles.halfInput}>
-                <TouchableOpacity
-                  style={styles.timePickerButton}
-                  onPress={() => setShowTimePicker(true)}
-                >
-                  <Text style={styles.timePickerButtonText}>{time || 'Select Time'}</Text>
-                </TouchableOpacity>
-                {showTimePicker && (
-                  <DateTimePicker
-                    value={getTimeDate()}
-                    mode="time"
-                    is24Hour={false}
-                    display="spinner"
-                    onChange={onTimeChange}
-                  />
-                )}
-              </View>
-
-              <View style={[styles.pickerWrapper, styles.halfInput]}>
-                <Picker
-                  selectedValue={people}
-                  onValueChange={(itemValue) => setPeople(itemValue)}
-                  style={styles.picker2}
-                >
-                  {[...Array(15)].map((_, i) => (
-                    <Picker.Item key={i + 1} label={`No. of people ${i + 1}`} value={`${i + 1}`} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.confirmButton}
-                onPress={confirmBooking}
-              >
-                <Text style={styles.confirmButtonText}>Confirm Booking</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        );
-      }
-      case 'Deliveries': {
-        const confirmDelivery = () => {
-          if (!name || !surname || !contactNumber || !time || !address) {
-            Alert.alert('Please fill in all fields');
-            return;
-          }
-          Alert.alert(
-            'Delivery Confirmed',
-            `Thank you, ${name} ${surname}!\nYour order will be delivered to "${address}" at ${time}.`
-          );
-        };
-
-        // Helper to convert time string (e.g., "7:30 PM") to Date object
-        const getTimeDate = () => {
-          if (!time) return new Date();
-          const [hourMin, meridian] = time.split(' ');
-          let [hours, minutes] = hourMin.split(':').map(Number);
-          if (meridian === 'PM' && hours < 12) hours += 12;
-          if (meridian === 'AM' && hours === 12) hours = 0;
-          const date = new Date();
-          date.setHours(hours);
-          date.setMinutes(minutes);
-          return date;
-        };
-
-        const onTimeChange = (event, selectedDate) => {
-          setShowTimePicker2(false); // Always close picker after selection on Android
-          if (selectedDate) {
-            let hours = selectedDate.getHours();
-            const minutes = selectedDate.getMinutes();
-            const meridian = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12 || 12;
-            const formattedTime = `${hours}:${minutes < 10 ? '0' : ''}${minutes} ${meridian}`;
-            setTime(formattedTime);
-          }
-        };
-
-        return (
-          <ScrollView contentContainerStyle={styles.pageContainer}>
-            <Text style={styles.pageTitle}>Deliveries</Text>
-
-            {/* Stacked inputs aligned left */}
-            <TextInput
-              style={[styles.input, styles.leftAlignedInput]}
-              placeholder="Name"
-              value={name}
-              onChangeText={setName}
-            />
-
-            <TextInput
-              style={[styles.input, styles.leftAlignedInput]}
-              placeholder="Surname"
-              value={surname}
-              onChangeText={setSurname}
-            />
-
-            <TextInput
-              style={[styles.input, styles.leftAlignedInput]}
-              placeholder="Contact Number"
-              keyboardType="phone-pad"
-              value={contactNumber}
-              onChangeText={setContactNumber}
-            />
-
-            {/* Row container for Time and Address */}
-            <View style={styles.rowContainer}>
-              <View style={styles.halfInput}>
-                <TouchableOpacity
-                  style={styles.timePickerButton}
-                  onPress={() => setShowTimePicker2(true)}
-                >
-                  <Text style={styles.timePickerButtonText}>{time || 'Select Time'}</Text>
-                </TouchableOpacity>
-                {showTimePicker2 && (
-                  <DateTimePicker
-                    value={getTimeDate()}
-                    mode="time"
-                    is24Hour={false}
-                    display="spinner"
-                    onChange={onTimeChange}
-                  />
-                )}
-              </View>
-
-              <TextInput
-                style={[styles.input, styles.halfInput]}
-                placeholder="Delivery Address"
-                value={address}
-                onChangeText={setAddress}
-              />
-            </View>
-
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.confirmButton}
-                onPress={confirmDelivery}
-              >
-                <Text style={styles.confirmButtonText}>Confirm Delivery</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        );
-      }
-      case 'Gourmet Meals': {
-        const filteredGourmetMeals = courseFilter === 'All'
-          ? gourmetMeals
-          : gourmetMeals.filter(meal =>
-              meal.course?.toLowerCase() === courseFilter.toLowerCase()
-            );
-
-        return (
-          <View style={styles.pageContainer}>
-            <Text style={styles.pageTitle}>Gourmet Meals</Text>
-
-            <View style={styles.filterContainer}>
-              <Text style={styles.filterLabel}>Filter by Course:</Text>
-              <Picker
-                selectedValue={courseFilter}
-                onValueChange={(value) => setCourseFilter(value)}
-                mode="dropdown"
-                style={{ flex: 1 }}
-              >
-                <Picker.Item label="All" value="All" />
-                <Picker.Item label="Starter" value="Starter" />
-                <Picker.Item label="Main" value="Main" />
-                <Picker.Item label="Dessert" value="Dessert" />
-                <Picker.Item label="Side" value="Side" />
-                <Picker.Item label="Drink" value="Drink" />
-              </Picker>
-            </View>
-
-            <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>
-              Total Meals: {filteredGourmetMeals.length}
-            </Text>
-
-            {renderMealsList(filteredGourmetMeals, 'Gourmet Meals')}
-          </View>
-        );
-      }
-      case 'About':
-        return (
-          <View style={styles.aboutContainer}>
-            <Text style={styles.aboutTitle}>About</Text>
-            <Text style={styles.aboutText}>
-              Founded by the passionate Chef Christoffel and his family, our restaurant began as a humble kitchen dedicated to celebrating the rich culinary traditions of the region. With decades of experience and a shared love for fresh, seasonal ingredients, the chefs have crafted a unique cooking style we call “Heritage Fusion.” This style blends classic techniques with modern flavors, emphasizing natural tastes and artistic presentation. Our mission is to offer an unforgettable dining experience that honors the past while embracing innovation.
-            </Text>
-          </View>
-        );
-      default:
-        return (
-          <View style={styles.pageContainer}>
-            <Text>Page not found</Text>
-          </View>
-        );
+      case 'Home': return renderHomePage();
+      case 'Chef Menu': return renderChefMenuPage();
+      case 'Guest Filter': return renderGuestFilterPage();
+      case 'Bookings': return renderBookingsPage();
+      case 'Deliveries': return renderDeliveriesPage();
+      case 'About': return renderAboutPage();
+      default: return <View style={styles.pageContainer}><Text>Page not found</Text></View>;
     }
   };
 
+  // Navbar and Footer
   const Navbar = () => (
     <View style={[styles.nav, { backgroundColor: theme.colors.navBackground }]}>
       <TouchableOpacity onPress={() => navigateTo('Home')} style={styles.heroImageWrapper}>
-        <Image
-          source={require('./assets/hero-image.png')}
-          style={styles.heroImage}
-          resizeMode="contain"
-        />
+        <Image source={require('./assets/hero-image.png')} style={styles.heroImage} resizeMode="contain" />
       </TouchableOpacity>
-
-      <Text style={[styles.navText, { color: theme.colors.navText }]}>
-        Christoffel's
-      </Text>
-
+      <Text style={[styles.navText, { color: theme.colors.navText }]}>Christoffel's</Text>
       <TouchableOpacity onPress={toggleMenu} style={styles.menuButton}>
         <View style={[styles.bar, { backgroundColor: theme.colors.navText }]} />
         <View style={[styles.bar, { backgroundColor: theme.colors.navText }]} />
@@ -540,60 +561,34 @@ const Layout = () => {
       </TouchableOpacity>
     </View>
   );
-
   const Footer = () => (
     <View style={[styles.footer, { backgroundColor: theme.colors.footerBackground }]}>
-      <TouchableOpacity style={styles.orderButton}>
-        <Text style={styles.orderButtonText}>Order</Text>
-      </TouchableOpacity>
-
-      <View style={styles.listsContainer}>
-        <View style={styles.list}>
-          <Text style={styles.listHeading}>FAQS</Text>
-          <Text style={styles.listItem}>BOOKINGS</Text>
-          <Text style={styles.listItem}>TAKEAWAYS</Text>
-          <Text style={styles.listItem}>LOCATIONS</Text>
-        </View>
-        <View style={styles.list}>
-          <Text style={styles.listHeading}>PAYMENT OPTIONS</Text>
-          <Text style={styles.listItem}>SNAP SCAN</Text>
-          <Text style={styles.listItem}>TAP OR INSERT</Text>
-          <Text style={styles.listItem}>EFT/PAYMENT GATEWAY</Text>
-        </View>
-      </View>
-
-      <TouchableOpacity style={styles.downloadButton}>
-        <Text style={styles.downloadButtonText}>Download Menu</Text>
-        <Feather name="download" color="#000" size={18} />
-      </TouchableOpacity>
-
-      <View style={styles.verticalLine} />
-
-      <TouchableOpacity onPress={() => openEditModal(selectedPage)} style={styles.wrenchIcon}>
-        <MaterialCommunityIcons name="wrench-outline" color="#000" size={14} />
-      </TouchableOpacity>
+      <Text style={{ color: theme.colors.footerText, textAlign: 'center', width: '100%' }}>
+        © 2025 Christoffel's Culinary Experience
+      </Text>
     </View>
   );
+
+
+  // Side menu with pages
+  const menuPages = ['Home', 'Chef Menu', 'Guest Filter', 'Bookings', 'Deliveries', 'About'];
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Navbar />
       <View style={styles.body}>{renderPageContent()}</View>
       <Footer />
-
       {menuVisible && (
         <>
           <TouchableWithoutFeedback onPress={toggleMenu}>
             <View style={styles.overlay} />
           </TouchableWithoutFeedback>
-
           <Animated.View style={[styles.sideMenu, { left: slideAnim }]}>
             <TouchableOpacity onPress={toggleMenu} style={styles.exitIcon}>
               <Feather name="x" size={28} color="#000" />
             </TouchableOpacity>
-
             <View style={styles.menuItemsContainer}>
-              {['Home', 'Menu', 'Bookings', 'Deliveries', 'Gourmet Meals', 'About'].map((item) => (
+              {menuPages.map((item) => (
                 <TouchableOpacity
                   key={item}
                   style={styles.menuItem}
@@ -606,8 +601,7 @@ const Layout = () => {
           </Animated.View>
         </>
       )}
-
-      {/* Modal for editing meal */}
+      {/* Chef Modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -620,61 +614,7 @@ const Layout = () => {
               <Text style={styles.modalTitle}>
                 {editingMealId ? 'Edit Meal' : 'Add New Meal'} - {editingMenu}
               </Text>
-
-              {/* Menu selection picker */}
-              <Text style={styles.inputLabel}>Select Menu</Text>
-              <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={editingMenu}
-                  onValueChange={(itemValue) => {
-                    setEditingMenu(itemValue);
-                    // Reset meal selection and clear form when menu changes
-                    setEditingMealId(null);
-                    setFormName('');
-                    setFormDescription('');
-                    setFormImageUri(null);
-                  }}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Menu" value="Menu" />
-                  <Picker.Item label="Gourmet Meals" value="Gourmet Meals" />
-                </Picker>
-              </View>
-
-              {/* Food item selection picker */}
-              <Text style={styles.inputLabel}>Select Food Item</Text>
-              <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={editingMealId || 'new'}
-                  onValueChange={(itemValue) => {
-                    if (itemValue === 'new') {
-                      // Clear form for new meal
-                      setEditingMealId(null);
-                      setFormName('');
-                      setFormDescription('');
-                      setFormImageUri(null);
-                    } else {
-                      // Load selected meal data
-                      const mealsList = editingMenu === 'Menu' ? menuMeals : gourmetMeals;
-                      const meal = mealsList.find((m) => m.id === itemValue);
-                      if (meal) {
-                        setEditingMealId(meal.id);
-                        setFormName(meal.name);
-                        setFormDescription(meal.description);
-                        setFormImageUri(meal.image);
-                      }
-                    }
-                  }}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Add New Meal" value="new" />
-                  {(editingMenu === 'Menu' ? menuMeals : gourmetMeals).map((meal) => (
-                    <Picker.Item key={meal.id} label={meal.name} value={meal.id} />
-                  ))}
-                </Picker>
-              </View>
-
-              {/* Meal Name input */}
+              {/* Meal Name */}
               <Text style={styles.inputLabel}>Meal Name</Text>
               <TextInput
                 style={styles.input}
@@ -682,8 +622,7 @@ const Layout = () => {
                 onChangeText={setFormName}
                 placeholder="Enter meal name"
               />
-
-              {/* Description input */}
+              {/* Description */}
               <Text style={styles.inputLabel}>Description</Text>
               <TextInput
                 style={[styles.input, { height: 80 }]}
@@ -692,23 +631,30 @@ const Layout = () => {
                 onChangeText={setFormDescription}
                 placeholder="Enter meal description"
               />
-
+              {/* Course */}
               <Text style={styles.inputLabel}>Course Type</Text>
-                <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={formCourse}
-                    onValueChange={setFormCourse}
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="Starter" value="Starter" />
-                    <Picker.Item label="Main" value="Main" />
-                    <Picker.Item label="Dessert" value="Dessert" />
-                    <Picker.Item label="Side" value="Side" />
-                    <Picker.Item label="Drink" value="Drink" />
-                  </Picker>
-                </View>
-
-
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={formCourse}
+                  onValueChange={setFormCourse}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Starter" value="Starter" />
+                  <Picker.Item label="Main" value="Main" />
+                  <Picker.Item label="Dessert" value="Dessert" />
+                  <Picker.Item label="Side" value="Side" />
+                  <Picker.Item label="Drink" value="Drink" />
+                </Picker>
+              </View>
+              {/* Price */}
+              <Text style={styles.inputLabel}>Price (R)</Text>
+              <TextInput
+                style={styles.input}
+                value={formPrice}
+                onChangeText={setFormPrice}
+                placeholder="Enter price"
+                keyboardType="numeric"
+              />
               {/* Image picker */}
               <Text style={styles.inputLabel}>Image</Text>
               <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
@@ -718,7 +664,7 @@ const Layout = () => {
                   <Text style={styles.imagePlaceholder}>Tap to select image</Text>
                 )}
               </TouchableOpacity>
-
+              
               {/* Take photo button */}
               <TouchableOpacity onPress={takePhoto} style={styles.cameraButton}>
                 <Text style={styles.cameraButtonText}>Take Photo</Text>
@@ -790,11 +736,12 @@ const styles = StyleSheet.create({
 
   pageContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     paddingVertical: 30,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
+    width: '100%',
   },
 
   welcomeTitle: {
@@ -822,16 +769,17 @@ const styles = StyleSheet.create({
   },
 
   mealName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
+    flexShrink: 1,
   },
 
   mealDescription: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#444',
+     fontSize: 14,
+    color: '#666',
+    marginTop: 4,
   },
 
   mealItem: {
@@ -839,15 +787,20 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#e0e0e0ff',
     borderRadius: 8,
-    padding: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 10,
     alignItems: 'center',
-    width: '100%',
+    width: 380,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    minHeight: 100,
+    justifyContent: 'space-between', 
   },
   mealImage: {
-    width: 80,
-    height: 80,
+    width: 90,
+    height: 90,
     borderRadius: 10,
-    backgroundColor: '#ddd',
+    backgroundColor: '#eee',
   },
 
   addButton: {
@@ -924,17 +877,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-
-   pageContainer: {
-    padding: 20,
-    backgroundColor: '#fff',
-    alignItems: 'flex-start',
-  },
   pageTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     alignSelf: 'center',
+    textAlign: 'center'
   },
   input: {
     borderWidth: 1,
