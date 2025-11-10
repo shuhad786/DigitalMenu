@@ -194,6 +194,7 @@ const Layout = () => {
     }
     return meals.map((meal) => (
       <View key={meal.id} style={styles.mealItem}>
+        {/* Image */}
         {meal.image ? (
           <Image source={{ uri: meal.image }} style={styles.mealImage} />
         ) : (
@@ -201,44 +202,52 @@ const Layout = () => {
             <Text style={{ color: '#999' }}>No Image</Text>
           </View>
         )}
-        <View style={styles.mealTextContainer}>
-          <Text style={styles.mealName} numberOfLines={1} ellipsizeMode="tail">
-            {meal.name}
-          </Text>
+
+        {/* Text and icons container */}
+        <View style={styles.mealContentContainer}>
+          {/* Description - first row */}
           <Text style={styles.mealDescription}>{meal.description}</Text>
-          <Text style={{ fontStyle: 'italic', color: '#888', fontSize: 14 }}>
-            {meal.course}
-          </Text>
-          <Text style={{ color: '#333', fontWeight: 'bold' }}>
+
+          {/* Price - second row */}
+          <Text style={styles.mealPrice}>
             R{meal.price ? meal.price.toFixed(2) : 'N/A'}
           </Text>
+
+          {/* Third row: course + icons */}
+          <View style={styles.courseAndIconsRow}>
+            <Text style={styles.mealCourse}>{meal.course}</Text>
+
+            <View style={styles.iconsContainer}>
+              <TouchableOpacity
+                onPress={() => toggleFavorite(menuName, meal.id)}
+                style={styles.iconButton}
+              >
+                <Feather
+                  name={meal.favorite ? 'star' : 'star'}
+                  size={24}
+                  color={meal.favorite ? '#FFD700' : '#888'}
+                />
+              </TouchableOpacity>
+
+              {showRemove && (
+                <>
+                  <TouchableOpacity
+                    onPress={() => removeMeal(menuName, meal.id)}
+                    style={styles.iconButton}
+                  >
+                    <Feather name="trash-2" size={22} color="#d00" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => openEditModal(menuName, meal)}
+                    style={styles.iconButton}
+                  >
+                    <Feather name="edit" size={22} color="#007bff" />
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </View>
         </View>
-        <TouchableOpacity
-          onPress={() => toggleFavorite(menuName, meal.id)}
-          style={styles.favoriteIcon}
-        >
-          <Feather
-            name={meal.favorite ? 'star' : 'star'}
-            size={24}
-            color={meal.favorite ? '#FFD700' : '#888'}
-          />
-        </TouchableOpacity>
-        {showRemove && (
-          <>
-            <TouchableOpacity
-              onPress={() => removeMeal(menuName, meal.id)}
-              style={{ marginLeft: 10 }}
-            >
-              <Feather name="trash-2" size={22} color="#d00" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => openEditModal(menuName, meal)}
-              style={{ marginLeft: 10 }}
-            >
-              <Feather name="edit" size={22} color="#007bff" />
-            </TouchableOpacity>
-          </>
-        )}
       </View>
     ));
   };
@@ -780,6 +789,45 @@ const styles = StyleSheet.create({
      fontSize: 14,
     color: '#666',
     marginTop: 4,
+  },
+
+  mealContentContainer: {
+    flex: 1,
+    marginLeft: 15,
+    justifyContent: 'flex-start',
+  },
+
+  mealDescription: {
+    fontSize: 14,
+    color: '#444',
+    marginBottom: 4,
+  },
+
+  mealPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 6,
+  },
+
+  courseAndIconsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  mealCourse: {
+    fontStyle: 'italic',
+    color: '#888',
+    fontSize: 14,
+  },
+
+  iconsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  iconButton: {
+    marginLeft: 10,
   },
 
   mealItem: {
