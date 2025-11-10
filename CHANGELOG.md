@@ -20,4 +20,3 @@ All notable changes to this project will be documented in this file.
 - Deleted unwanted files
 - Install React Native
 - Initial commit
-

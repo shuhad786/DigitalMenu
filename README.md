@@ -83,3 +83,26 @@ in the other run to start the metro: npx react-native start
 This project is [MIT](./LICENSE) licensed.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 📝 Changelog <a name="changelog"></a>
+
+Below is the changelog from the first initial version to the final submission
+
+## [0.0.1] - 2025-11-09
+
+### Added
+- Updated App.js to include new features
+- adding functionality to App.js
+
+### Changed
+- remove changelog.md
+- Create CHANGELOG.md files
+- Create Filter for courses in both Menus
+- Update README.md
+- Corrected alignment of titles in App.js
+- Update app.js with all pages and modal
+- Update code to render menu footer and navbar
+- Update code and package
+- Deleted unwanted files
+- Install React Native
+- Initial commit
